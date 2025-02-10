@@ -421,10 +421,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6a7ccdde142125478bca8a40913882a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _width: 6
-  _height: 6
-  _maximumIterations: 3
-  _newRoomProbability: 0.45
+  _width: 12
+  _height: 12
+  _maximumIterations: 8
+  _newRoomProbability: 0.16
+  _straightRoomMultiplier: 5
+  _initialProbabilityBoost: 0.4
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

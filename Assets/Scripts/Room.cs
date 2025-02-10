@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using UnityEngine;
+using static TileMap;
 
 public class Room 
 {
@@ -11,6 +12,8 @@ public class Room
     public bool occupied = false;
 
     public Room parent = null;
+
+    public TileDirections parentDirection = TileDirections.None;
     public int iteration = 0;
 
     private TileMap _ownerTileMap;
