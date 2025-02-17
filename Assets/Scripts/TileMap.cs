@@ -24,6 +24,9 @@ public class TileMap : MonoBehaviour
     public float _initialProbabilityBoost = 0.5f;
 
 
+    public GameObject _roomPrefab;
+    public GameObject _doorPrefab;
+
     HashSet<Room> closedList = new HashSet<Room>();
     Queue<Room> openList = new Queue<Room>();
 
@@ -80,7 +83,7 @@ public class TileMap : MonoBehaviour
         }
     }
 
-    void TryEnqueueRoomPreferStraightLines(Room room, Room parentRoom, TileDirections enqueuingDirection)
+    bool TryEnqueueRoomPreferStraightLines(Room room, Room parentRoom, TileDirections enqueuingDirection)
     {
         if (room.occupied == false)
         {
@@ -107,7 +110,7 @@ public class TileMap : MonoBehaviour
                 // márcalo como ocupado aunque no se haya encolado, para evitar que se intente generar este cuarto varias veces.
                 // room.parent = parentRoom; // solo para motivos de debug draw.
                 room.occupied = true; 
-                return; // no se generó el cuarto.
+                return false; // no se generó el cuarto.
             }
 
             room.iteration = parentRoom.iteration + 1;
@@ -119,11 +122,13 @@ public class TileMap : MonoBehaviour
 
             // y luego pones puerta entre el cuarto actual y el cuarto que estamos metiendo a la lista abierta.
             // TODO:
+            return true;
         }
         else
         {
             // Debug.Log($"el cuarto: x {room.yPos}, y {room.yPos} está ocupado");
         }
+        return false;
     }
 
     void CreateDungeon()
@@ -154,8 +159,13 @@ public class TileMap : MonoBehaviour
         while (openList.Count > 0)
         {
             currentRoom = openList.Dequeue();
+            // cuando sacas a alguien de la lista abierta aquí, lo tienes que meter a la lista cerrada
+            closedList.Add(currentRoom); 
             x = currentRoom.xPos;
             y = currentRoom.yPos;
+
+            // spawneamos un gameobject de cuarto en la posición del current room.
+            GameObject currentSpawnedRoom = Instantiate(_roomPrefab, new Vector3(x, 0.0f, y), Quaternion.identity, this.transform);
 
             // Si ya llegamos al número máximo de iteraciones, dejamos de generar más cuartos (de conectarlos).
             if(currentRoom.iteration >= _maximumIterations) 
@@ -172,28 +182,46 @@ public class TileMap : MonoBehaviour
                 // si no, entonces NO podemos crear un cuarto arriba, porque 0-1 = -1, y sería pedirle a un array el elemento [-1]
                 // esta comprobación es para evitar causar access violations.
                 // TryEnqueueRoom(_roomsGrid[y - 1][x], currentRoom);
-                TryEnqueueRoomPreferStraightLines(_roomsGrid[y - 1][x], currentRoom, TileDirections.Up);
+                if(TryEnqueueRoomPreferStraightLines(_roomsGrid[y - 1][x], currentRoom, TileDirections.Up))
+                {
+                    // si sí se añadió un cuarto, entonces podemos generar una puerta.
+                    Instantiate(_doorPrefab, new Vector3(x, 0.0f, y - 0.5f), Quaternion.identity, currentSpawnedRoom.transform);
+                }
             }
 
             // CREAR CUARTO DERECHA
             if (x < _width - 1)  // se le pone el -1 para que el penúltimo a la derecha sí pueda entrar al if, pero el último no.
             {
                 // TryEnqueueRoom(_roomsGrid[y][x + 1], currentRoom);
-                TryEnqueueRoomPreferStraightLines(_roomsGrid[y][x + 1], currentRoom, TileDirections.Right);
+                if(TryEnqueueRoomPreferStraightLines(_roomsGrid[y][x + 1], currentRoom, TileDirections.Right))
+                {
+                    // si sí se añadió un cuarto, entonces podemos generar una puerta.
+                    GameObject spawnedDoor = Instantiate(_doorPrefab, new Vector3(x + 0.5f, 0.0f, y), Quaternion.identity, currentSpawnedRoom.transform);
+                    spawnedDoor.transform.Rotate(0, 90, 0);
+                }
             }
 
             // CREAR CUARTO ABAJO
             if (y < _height - 1)
             {
                 // TryEnqueueRoom(_roomsGrid[y + 1][x], currentRoom);
-                TryEnqueueRoomPreferStraightLines(_roomsGrid[y + 1][x], currentRoom, TileDirections.Down);
+                if(TryEnqueueRoomPreferStraightLines(_roomsGrid[y + 1][x], currentRoom, TileDirections.Down))
+                {
+                    // si sí se añadió un cuarto, entonces podemos generar una puerta.
+                    Instantiate(_doorPrefab, new Vector3(x, 0.0f, y + 0.5f), Quaternion.identity, currentSpawnedRoom.transform);
+                }
             }
 
             // CREAR CUARTO IZQUIERDA
             if (x > 0)  
             {
                 // TryEnqueueRoom(_roomsGrid[y][x - 1], currentRoom);
-                TryEnqueueRoomPreferStraightLines(_roomsGrid[y][x - 1], currentRoom, TileDirections.Left);
+                if(TryEnqueueRoomPreferStraightLines(_roomsGrid[y][x - 1], currentRoom, TileDirections.Left))
+                {
+                    // si sí se añadió un cuarto, entonces podemos generar una puerta.
+                    GameObject spawnedDoor = Instantiate(_doorPrefab, new Vector3(x - 0.5f, 0.0f, y), Quaternion.identity, currentSpawnedRoom.transform);
+                    spawnedDoor.transform.Rotate(0, 90, 0);
+                }
             }
 
         }
