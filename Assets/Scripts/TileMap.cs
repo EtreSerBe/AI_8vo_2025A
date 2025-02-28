@@ -32,6 +32,19 @@ public class TileMap : MonoBehaviour
 
     private bool _dungeonIsCreated = false;
 
+    // Si solo obtenemos el cuarto inicial con un random entre todos los cuartos,
+    // rápidamente caeríamos en el caso de que no podemos abrir las puertas con las llaves alcanzables.
+    // Por el momento lo haremos así, pero la mejor solución va a implicar checar cuáles son cuartos 
+    // iniciales viables para poder abrir las puertas.
+    public Room GetRandomInitialRoom()
+    {
+        // No podemos iterar sobre un HashSet, por lo que lo tenemos que convertir en una List antes de ello.
+        List<Room> tempList = new List<Room>( closedList);
+        int rand = Random.Range( 0, tempList.Count );
+        // regresamos un elemento al azar.
+        return tempList[rand];
+    }
+
     // Después lo vamos a hacer controlando el número de cuartos.
 
     public enum TileDirections
@@ -231,6 +244,22 @@ public class TileMap : MonoBehaviour
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
+    {
+        // Initialize(); // lo comenté porque ahora se va a mandar a llamar desde el Start del DungeonGameManager.
+
+        //Renderer exampleRenderer = GetComponent<Renderer>();
+        //if (exampleRenderer == null) 
+        //{
+        //    Debug.LogError("el componente Renderer para exampleRenderer no se encontró");
+        //}
+
+        // operación X
+        // checar resultado de operación X
+        // si falló la operación, detener la ejecución o hacer que truene lo menos posible
+        // o reintentar la operación, etc. según sea el caso.
+    }
+
+    public void Initialize()
     {
         GenerateTileMap();
         CreateDungeon();

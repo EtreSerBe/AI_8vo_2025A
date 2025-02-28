@@ -35,4 +35,16 @@ public class Door : MonoBehaviour
     {
         
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        //LayerMask pickupLayerMask = LayerMask.GetMask("Player", "Bullet");
+
+        //if (other.gameObject.layer == LayerMask.NameToLayer("Player")
+        //    || other.gameObject.layer == LayerMask.NameToLayer("Bullet"))
+        //{ 
+        //    // entonces chocamos con el player.
+
+        //}
+    }
 }
