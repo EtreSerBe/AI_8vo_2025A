@@ -5,16 +5,17 @@ using UnityEditor.ShaderGraph.Internal;
 
 public class TileMap : MonoBehaviour
 {
-    public int _width = 6;
-    public int _height = 6;
+    public byte _width = 6;
+    public byte _height = 6;
 
     public Room[][] _roomsGrid = null;
+    
 
     public Room _initialRoom = null;
 
     // Primero vamos a hacer el calabozo controlando el límite de iteraciones del algoritmo
     // _maximumIterations se refiere al máximo de profundidad del árbol de pathfinding que estamos generando.
-    public int _maximumIterations = 3;
+    public byte _maximumIterations = 3;
 
     [Range(0, 1)]
     public float _newRoomProbability;
@@ -29,6 +30,8 @@ public class TileMap : MonoBehaviour
 
     HashSet<Room> closedList = new HashSet<Room>();
     Queue<Room> openList = new Queue<Room>();
+
+    
 
     private bool _dungeonIsCreated = false;
 
@@ -47,7 +50,7 @@ public class TileMap : MonoBehaviour
 
     // Después lo vamos a hacer controlando el número de cuartos.
 
-    public enum TileDirections
+    public enum TileDirections : byte
     {
         Up, Down, Left, Right, None
     }
@@ -56,10 +59,10 @@ public class TileMap : MonoBehaviour
     {
         _roomsGrid = new Room[_height][];
 
-        for(int j = 0; j < _height; j++)
+        for(byte j = 0; j < _height; j++)
         {
             _roomsGrid[j] = new Room[_width];
-            for (int i = 0; i < _width; i++)
+            for (byte i = 0; i < _width; i++)
             {
                 // Lo primero sería instanciarlos.
                 _roomsGrid[j][i] = new Room();
@@ -81,7 +84,8 @@ public class TileMap : MonoBehaviour
                 return; // no se generó el cuarto.
             }
 
-            room.iteration = parentRoom.iteration + 1;
+            room.iteration = parentRoom.iteration;
+            room.iteration++;
             room.parent = parentRoom;
             room.occupied = true;
             // si no está ocupado ya, lo metes a la lista abierta.
@@ -122,14 +126,28 @@ public class TileMap : MonoBehaviour
                 Debug.Log($"No se generó el cuarto: x {room.yPos}, y {room.yPos}");
                 // márcalo como ocupado aunque no se haya encolado, para evitar que se intente generar este cuarto varias veces.
                 // room.parent = parentRoom; // solo para motivos de debug draw.
-                room.occupied = true; 
+                room.occupied = true;
+                room.walkable = false; 
                 return false; // no se generó el cuarto.
             }
 
-            room.iteration = parentRoom.iteration + 1;
+            room.iteration = parentRoom.iteration;
+            room.iteration++; 
             room.parent = parentRoom;
             room.occupied = true;
             room.parentDirection = enqueuingDirection;
+            // Añadimos la puerta entre estos dos cuartos, se la añadimos a cada uno.
+            Door newDoor = new Door(room, parentRoom);
+            //float enqueueHorizontalOffset = enqueuingDirection == TileDirections.Left ? -1.0f :
+            //    enqueuingDirection == TileDirections.Right ? 1.0f : 0.0f;
+            //float enqueueVerticalOffset = enqueuingDirection == TileDirections.Down ? -1.0f :
+            //    enqueuingDirection == TileDirections.Up ? 1.0f : 0.0f;
+
+            // Instantiate(_doorPrefab, new Vector3(parentRoom.xPos, 0.0f, parentRoom.yPos - 0.5f), Quaternion.identity, gameObject.transform);
+
+            room.AddDoor(newDoor);
+            parentRoom.AddDoor(newDoor);
+
             // si no está ocupado ya, lo metes a la lista abierta.
             openList.Enqueue(room);
 
