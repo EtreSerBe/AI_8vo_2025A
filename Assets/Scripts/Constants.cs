@@ -15,7 +15,7 @@ public static class Constants
     public static int ObstacleLayer = LayerMask.NameToLayer("Obstacle");
     public static int PickupObjectLayer = LayerMask.NameToLayer("PickupObject");
 
-    public static readonly HashSet<DungeonKeys> AllDungeonKeys = new HashSet<DungeonKeys>()
+    public static readonly List<DungeonKeys> AllDungeonKeysList = new List<DungeonKeys>()
     {
         DungeonKeys.Bomb, DungeonKeys.SmallKey, DungeonKeys.BossKey
     };
@@ -35,6 +35,7 @@ public enum DamageType
 
 public enum DungeonKeys : byte
 {
+    NONE = 0,
     Bomb, 
     SmallKey,
     BossKey,

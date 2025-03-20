@@ -17,7 +17,7 @@ public class Room
     public TileDirections parentDirection = TileDirections.None;
     public byte iteration = 0;
 
-    byte KeyId = 0; // es el ID que nos dice qué tipos de puertas cerradas (locks) puede abrir.
+    byte _keyId = 0; // es el ID que nos dice qué llave es obtenible en ese room.
 
     // Nuestro room va a tener entre 1 y 4 puertas (binding of isaac).
     List<Door> doors = new List<Door>();
@@ -49,6 +49,16 @@ public class Room
         }
 
         return result;
+    }
+
+    public byte GetKeyTypeInsideRoom()
+    {
+        return _keyId;
+    }
+
+    public void SetObtainableKey(byte keyId)
+    {
+        _keyId = keyId;
     }
 
     // private TileMap _ownerTileMap;

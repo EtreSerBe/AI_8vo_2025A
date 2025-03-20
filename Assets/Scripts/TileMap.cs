@@ -27,6 +27,7 @@ public class TileMap : MonoBehaviour
 
     public GameObject _roomPrefab;
     public GameObject _doorPrefab;
+    public GameObject _keyPrefab;
 
     HashSet<Room> closedList = new HashSet<Room>();
     Queue<Room> openList = new Queue<Room>();
@@ -292,7 +293,7 @@ public class TileMap : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (_dungeonIsCreated == false)
+        /*if (_dungeonIsCreated == false)
             return;
 
 
@@ -335,7 +336,7 @@ public class TileMap : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawCube(new Vector3(_initialRoom.xPos, _initialRoom.yPos, 0), 0.6f * Vector3.one);
-
+        */
 
     }
 }

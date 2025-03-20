@@ -455,6 +455,7 @@ MonoBehaviour:
   _initialProbabilityBoost: 0.4
   _roomPrefab: {fileID: 6250611302381082548, guid: 16837cc071f507940a772746ebbc9f41, type: 3}
   _doorPrefab: {fileID: 2668431687077439987, guid: 607f84a1951800d4993651431dbfb67e, type: 3}
+  _keyPrefab: {fileID: 1260829594}
 --- !u!114 &828710503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -516,6 +517,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1260829594 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4034389540927400941, guid: dadabff9eecf69147a0f39f163227f8d, type: 3}
+  m_PrefabInstance: {fileID: 1856246851}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1729331388
 PrefabInstance:
   m_ObjectHideFlags: 0

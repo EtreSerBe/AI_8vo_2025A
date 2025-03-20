@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 // los nodos de este árbol tienen que poder representar todo el estado del mundo en ese instante.
 // representar las cosas relevantes al proceso específico para el que se esté usando este árbol.
@@ -62,12 +63,12 @@ public class DungeonStateNode
     public List<byte> GetUnusedKeyTypes()
     {
         List<byte> result = new List<byte>();
-        for(byte i = 0; i < ((byte)DungeonKeys.NUMBER_OF_KEYS); i++)
+        foreach(DungeonKeys dungeonKey in Constants.AllDungeonKeysList)
         { 
             // Si este tipo de cerrojo no está en uso aún, entonces sí lo queremos regresar en la lista.
-            if(!lockTypesInUse.Contains(i))
+            if(!lockTypesInUse.Contains((byte)dungeonKey))
             {
-                result.Add(i);
+                result.Add((byte)dungeonKey);
             }
         }
 
@@ -87,7 +88,6 @@ public class ActionTree : MonoBehaviour
 
     // qué profundidad tiene este árbol.
 
-
     // Poder checar a cuáles Llaves se puede acceder en el mundo y en qué orden.
     // Cuando estemos checando el estado del calabozo en cierto nodo, 
     // vamos a hacer una serie de pathfindings.
@@ -98,6 +98,7 @@ public class ActionTree : MonoBehaviour
     DungeonStateNode _initialState;
     DungeonStateNode _currentState;
 
+    HashSet<DungeonStateNode> _knownDungeonStateNodes = new HashSet<DungeonStateNode>();
 
     void TryEnqueueReachableRoom(Room enqueuedRoom, Room currentNode, 
         ref Queue<Room> openNodes, ref HashSet<Room> closedNodes,  
@@ -213,14 +214,30 @@ public class ActionTree : MonoBehaviour
         return result;
     }
 
+    private List<Room> GetRoomsWithoutKeyInside(ref List<Room> reachableRooms)
+    {
+        List<Room> result = new List<Room>();
+
+        // Filtramos a los que ya tienen todas sus puertas con cerrojos.
+        foreach (Room room in reachableRooms)
+        {
+            if (room.GetKeyTypeInsideRoom() == 0)
+            {
+                // Si sí tiene alguna puerta que no tenga ninguna llave asignada, entonces sí es cerrable.
+                result.Add(room);
+            }
+            // si no, la ignoramos y ya.
+        }
+
+        return result;
+    }
 
 
     void KeyAndLockGeneration(TileMap initialDungeonState)
     {
-        DungeonStateNode currentState = new DungeonStateNode(ref initialDungeonState);
         // 1) Poner al personaje en un punto válido del mapa.
         // para ponerlo en un punto válido, tenemos que obtener todos los puntos válidos del mapa y de ahí elegir uno.
-        List<Room> initialReachableRooms = GetReachableRooms(ref currentState);
+        List<Room> initialReachableRooms = GetReachableRooms(ref _currentState);
         // ahora sí seleccionamos uno al azar.
         int rand = Random.Range(0, initialReachableRooms.Count);
         Room initialRoom = initialReachableRooms[rand]; // aquí es donde va a aparecer el jugador inicialmente.
@@ -230,21 +247,34 @@ public class ActionTree : MonoBehaviour
         // 2) obtener todos los lugares alcanzables desde donde está el jugador en ese momento.
         // Son initialReachableRooms.
 
+        // Creamos un nuevo dungeon state pero con esta nueva puerta o llave, según corresponda
+        DungeonStateNode newState = DungeonStateNode.Copy(_currentState);
 
         // 3) Si hay un número de llaves igual al de puertas (por ID),
         // poner una puerta en uno de esos lugares alcanzables.
-        if(currentState.lockedDoors.Count == currentState.currentPlayerObtainedKeys.Count)
+        if (_currentState.lockedDoors.Count == _currentState.currentPlayerObtainedKeys.Count)
         {
-            // Creamos un nuevo dungeon state pero con esta nueva puerta
-            DungeonStateNode newState = DungeonStateNode.Copy(currentState);
             // Necesitamos obtener el ID de la llave que se usará para cerrar esta puerta.
             // random de las llaves disponibles sin usar 
             List<byte> keyType = newState.GetUnusedKeyTypes();
+            // Checamos que todavía haya llaves disponibles, si no hay, el algoritmo debe terminar.
+            if (keyType.Count == 0)
+            {
+                Debug.LogWarning("No hay más llaves diferentes disponibles para cerrar puertas saliendo del algoritmo.");
+                return;
+            }
+
             // hacemos un random para elegir una de estos posibles tipos de llaves.
             rand = Random.Range(0, keyType.Count);
             byte keyTypeToUse = keyType[rand];
 
+
             List<Room> lockableRooms = GetLockableRooms(ref initialReachableRooms);
+            if(lockableRooms.Count == 0)
+            {
+                Debug.LogWarning("Se intentó cerrar otra puerta pero ya no había ninguna por cerrar.");
+                return;
+            }
 
             rand = Random.Range(0, lockableRooms.Count); // sí puede incluir a donde esté el player actualmente
             Room roomToLock = lockableRooms[rand]; // aquí es donde va a aparecer el jugador inicialmente.
@@ -255,12 +285,20 @@ public class ActionTree : MonoBehaviour
             List<Door> lockableDoors = roomToLock.GetDoorsWithNoLockAssigned();
             rand = Random.Range(0, lockableDoors.Count);
             Door doorToLock = lockableDoors[rand];
-            
-            // TO DO: Checar de qué lado debe ir la puerta.
+
+            //Room childRoom
+            //Room parentRoom = null;
+
+            //float enqueueHorizontalOffset = enqueuingDirection == TileDirections.Left ? -1.0f :
+            //    enqueuingDirection == TileDirections.Right ? 1.0f : 0.0f;
+            //float enqueueVerticalOffset = enqueuingDirection == TileDirections.Down ? -1.0f :
+            //    enqueuingDirection == TileDirections.Up ? 1.0f : 0.0f;
+
+            // TO DO: Checar de qué lado y rotación debe ir la puerta.
             Instantiate(_tileMap._doorPrefab, new Vector3(doorToLock.sideA.xPos, 1.0f, doorToLock.sideA.yPos), Quaternion.identity, gameObject.transform);
 
-            Debug.Log($"Colocando puerta cerrada en el cuarto: X{roomToLock.xPos}, Y{roomToLock.yPos} en la puerta" +
-                $"que va X{doorToLock.sideA.xPos}, Y{doorToLock.sideA.yPos} hacia X{doorToLock.sideB.xPos}, Y{doorToLock.sideB.yPos}");
+            Debug.Log($"Colocando puerta cerrada de tipo: {keyTypeToUse} en el cuarto: X{roomToLock.xPos}, Y{roomToLock.yPos} en la puerta" +
+                $"que va de X{doorToLock.sideA.xPos}, Y{doorToLock.sideA.yPos} hacia X{doorToLock.sideB.xPos}, Y{doorToLock.sideB.yPos}");
 
 
             // entonces ponemos una puerta nueva cerrada con este tipo de cerrojo elegido de los disponibles.
@@ -272,17 +310,12 @@ public class ActionTree : MonoBehaviour
             // Le decimos que ya tiene este tipo de llave en uso.
             newState.lockTypesInUse.Add(keyTypeToUse);
 
-            // finalmente metemos este nuevo nodo del estado del calabozo a
-            // nuestro DepthFirstSearch de posibles acciones/estados de mundo. (vea paso '5)' )
-
             // NOTA: Ahorita esto es a cada llave corresponde una puerta
         }
         else 
         {
             // 3.5) si hay más puertas, poner una llave que le corresponda a la puerta sin llave,
             // en un lugar alcanzable.
-            // Creamos un nuevo dungeon state pero con esta nueva llave
-            DungeonStateNode newState = DungeonStateNode.Copy(currentState);
 
             byte missingLockType = 0;
             // vamos a poner el tipo de llave que sí esté en uso pero el player todavía no obtenga.
@@ -296,12 +329,28 @@ public class ActionTree : MonoBehaviour
                 }
             }
 
-            // cuarto donde vamos a spawnear la llave.
-            rand = Random.Range(0, initialReachableRooms.Count); // sí puede incluir a donde esté el player actualmente
-            Room roomToLock = initialReachableRooms[rand]; // aquí es donde va a aparecer el jugador inicialmente.
+            // descartamos los cuartos donde ya hay una llave,
+            // NOTA: Podría ser posible tener más de una llave por room, pero por ahora lo limitamos a una.
+            List<Room> roomsWithoutKey = GetRoomsWithoutKeyInside(ref initialReachableRooms);
+            if (roomsWithoutKey.Count == 0)
+            {
+                Debug.LogWarning("Se intentó colocar una llave pero ya no había ningún cuarto alcanzable sin llave asignada.");
+                return;
+            }
 
-            roomToLock = newState._roomsGrid[roomToLock.yPos][roomToLock.xPos];
-            // le decimos que spawnee la llave ahí.
+            // cuarto donde vamos a spawnear la llave.
+            rand = Random.Range(0, roomsWithoutKey.Count); // sí puede incluir a donde esté el player actualmente
+            Room roomForKey = roomsWithoutKey[rand]; // aquí es donde va a aparecer el jugador inicialmente.
+
+            roomForKey = newState._roomsGrid[roomForKey.yPos][roomForKey.xPos];
+            // le decimos al cuarto que esta es la llave que tiene dentro.
+            roomForKey.SetObtainableKey(missingLockType);
+
+            // spawneamos la llave ahí.
+            Instantiate(_tileMap._keyPrefab, new Vector3(roomForKey.xPos, 1.0f, roomForKey.yPos), Quaternion.identity, gameObject.transform);
+
+            Debug.Log($"Colocando Llave de tipo: {missingLockType} en el cuarto: X{roomForKey.xPos}, Y{roomForKey.yPos}");
+
 
             // por simplicidad le voy a decir que el jugador la "tiene" en cuanto la spawneamos.
             // NOTA: lo ideal sería mover al player a la posición de esta llave y de ahí seguir el proceso. Lo haremos más tarde
@@ -311,6 +360,12 @@ public class ActionTree : MonoBehaviour
         // 4) el paso 3 o 3.5 nos genera un nuevo DungeonStateNode que tiene ya esta puerta o llave.
         // 5) cambiar de estado hacia ese nuevo DungeonStateNode, y repetir desde 1).
         // NOTA, a lo mejor nos faltó el punto de mover al personaje, pero ahorita vemos qué tal sale.
+        // finalmente metemos este nuevo nodo del estado del calabozo a
+        // nuestro DepthFirstSearch de posibles acciones/estados de mundo. (vea paso '5)' )
+        newState._parent = _currentState;
+        _knownDungeonStateNodes.Add(newState);
+        _currentState = newState;
+
 
         // Cuál es nuestra condición de terminación? cuándo detenemos este algoritmo?
         // por ejemplo: al poner 3 pares de llaves y puertas?
@@ -336,5 +391,96 @@ public class ActionTree : MonoBehaviour
         {
             KeyAndLockGeneration(_tileMap);
         }
+    }
+
+    private void OnDrawGizmos()
+    {
+        // solo dibujar el gizmo si ya hay mapa generado.
+        if (_tileMap == null)
+            return;
+
+        int height = _tileMap._height;
+        int width = _tileMap._width;
+
+        // dibujamos el gizmo con el mapa del _currentState del algoritmo.
+
+        for (int j = 0; j < height; j++)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                Gizmos.color = Color.white;
+
+                Room currentRoom = _currentState._roomsGrid[j][i];
+                // Lo primero sería instanciarlos.
+                // Esto nos permite comunicar a los Rooms con el el tilemap para preguntar qué rooms hay alrededor.
+                if (currentRoom.occupied == true)
+                {
+                    Vector3 nodePos = new Vector3(i, j, 0);
+                    if (currentRoom.parent == null)
+                    {
+                        // entonces se visitó pero no se creó este cuarto
+                        Gizmos.color = Color.black;
+                        Gizmos.DrawCube(new Vector3(i, j, 0), 0.25f * Vector3.one);
+                    }
+                    else
+                    {
+                        // si sí hay padre, checamos si esa conexión está cerrada con llave o no.
+                        Door doorToParent = currentRoom.GetDoorToRoom(currentRoom.parent);
+                        if (doorToParent._keyId != 0)
+                        {
+                            // si está cerrada con llave, dibujamos la línea de padre a hijo en
+                            // color magenta para que sea más visible.
+                            Gizmos.color = Color.magenta;
+                        }
+                        else
+                        {
+                            Gizmos.color = Color.white;
+                        }
+
+                        // dibujamos una línea entre el parent y este nodo.
+                        Vector3 parentPos = new Vector3(currentRoom.parent.xPos,
+                                                        currentRoom.parent.yPos, 0);
+                        Gizmos.DrawLine(nodePos, parentPos);
+
+                        // Dibujamos este nodo.
+                        Gizmos.color = Color.white;
+                        Gizmos.DrawCube(new Vector3(i, j, 0), 0.5f * Vector3.one);
+
+                        // si hay una llave en este cuarto, dibujamos una figura chiquita en él.
+                        if(currentRoom.GetKeyTypeInsideRoom() != 0)
+                        {
+                            Gizmos.color = Color.magenta;
+                            Gizmos.DrawSphere(new Vector3(i, j, -1.0f), 0.2f);
+                        }
+                    }
+                }
+                else // si aquí no hay cuarto, entonces dibujamos una esferita.
+                {
+                    Gizmos.DrawSphere(new Vector3(i, j, 0), 0.4f);
+                }
+            }
+        }
+
+        // este otro for es necesario para las puertas que se cierran que van de nodos sin padre hacia sus hijos.
+        Gizmos.color = Color.magenta;
+        foreach(Door door in _currentState.lockedDoors)
+        {
+            int xBegin = door.sideA.xPos;
+            int yBegin = door.sideA.yPos;
+
+            int xEnd = door.sideB.xPos;
+            int yEnd = door.sideB.yPos;
+
+            // dibujamos una línea entre el parent y este nodo.
+            Vector3 sideAPos = new Vector3(xBegin, yBegin, 0);
+            Vector3 sideBPos = new Vector3(xEnd, yEnd, 0);
+
+            Gizmos.DrawLine(sideAPos, sideBPos);
+
+        }
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawCube(new Vector3(_currentState._initialRoom.xPos, _currentState._initialRoom.yPos, 0), 0.6f * Vector3.one);
+
     }
 }
