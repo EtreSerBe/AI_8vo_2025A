@@ -10,7 +10,9 @@ public class BaseEnemy : MonoBehaviour
     protected float maxHP;
 
 
-    // Radio de detección 
+    [SerializeField] protected float movementSpeed;
+
+    // Radio de detecciï¿½n 
     [SerializeField]
     protected Senses detectionSenses;
 
@@ -22,6 +24,14 @@ public class BaseEnemy : MonoBehaviour
 
     [SerializeField]
     protected float attackDamage = 1.0f;
+    
+    [SerializeField]
+    protected float attackRate = 1.0f;
+    
+    [SerializeField]
+    protected float attackRange = 1.0f;
+    
+    
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -31,7 +41,7 @@ public class BaseEnemy : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // Si el script de Senses ya detectó a alguien.
+        // Si el script de Senses ya detectï¿½ a alguien.
         // if(detectionSenses.IsEnemyDetected())
         {
             // entonces podemos setearlo en el script de steering behaviors.
@@ -48,10 +58,10 @@ public class BaseEnemy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // si contra quien chocó este enemigo es algo de la capa de Balas del jugador, este enemigo debe de tomar daño.
+        // si contra quien chocï¿½ este enemigo es algo de la capa de Balas del jugador, este enemigo debe de tomar daï¿½o.
         if (other.gameObject.layer == LayerMask.NameToLayer("PlayerBullet"))
         {
-            // obtenemos el script de bullet de ese gameobject que nos chocó, 
+            // obtenemos el script de bullet de ese gameobject que nos chocï¿½, 
             Bullet collidingBullet = other.GetComponent<Bullet>();
             if (collidingBullet == null)
             {
@@ -65,7 +75,7 @@ public class BaseEnemy : MonoBehaviour
             currentHP -= collidingBullet.GetDamage();
 
 
-            Debug.Log($"perdí {collidingBullet.GetDamage()} de vida, mi vida ahora es: {currentHP}");
+            Debug.Log($"perdï¿½ {collidingBullet.GetDamage()} de vida, mi vida ahora es: {currentHP}");
 
 
             // si tu vida llega a 0 o menos, te mueres.

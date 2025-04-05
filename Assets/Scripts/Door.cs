@@ -4,11 +4,11 @@ public class Door
 {
     // Nos lleva de un cuarto a otro, 
 
-    // Tenemos que saber cu·les son los dos cuartos que est· conectando.
+    // Tenemos que saber cu√°les son los dos cuartos que est√° conectando.
     public Room sideA;
     public Room sideB;
 
-    // Necesitamos colliders para detectar la colisiÛn para "usar la puerta" y desde quÈ direcciÛn.
+    // Necesitamos colliders para detectar la colisi√≥n para "usar la puerta" y desde qu√© direcci√≥n.
     // Collider sideACollider;
     // Collider sideBCollider;
 

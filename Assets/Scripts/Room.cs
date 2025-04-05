@@ -5,7 +5,7 @@ using static TileMap;
 
 public class Room 
 {
-    // Usados para preguntarle al Owner qué hay alrededor de este cuarto.
+    // Usados para preguntarle al Owner quÃ© hay alrededor de este cuarto.
     public byte xPos;
     public byte yPos;
 
@@ -17,7 +17,7 @@ public class Room
     public TileDirections parentDirection = TileDirections.None;
     public byte iteration = 0;
 
-    byte _keyId = 0; // es el ID que nos dice qué llave es obtenible en ese room.
+    byte _keyId = 0; // es el ID que nos dice quÃ© llave es obtenible en ese room.
 
     // Nuestro room va a tener entre 1 y 4 puertas (binding of isaac).
     List<Door> doors = new List<Door>();
@@ -38,7 +38,7 @@ public class Room
         return null;
     }
 
-    // función que nos regresa las puertas de un cuarto que todavía no tienen un cerrojo asignado.
+    // funciÃ³n que nos regresa las puertas de un cuarto que todavÃ­a no tienen un cerrojo asignado.
     public List<Door> GetDoorsWithNoLockAssigned()
     {
         List<Door> result = new List<Door>();
@@ -74,13 +74,13 @@ public class Room
 
     public void Init(Room parentNeighbor, Door neighborDoor)
     {
-        // Nos setea una puerta que es la de nuestro "padre" en el proceso de generación.
+        // Nos setea una puerta que es la de nuestro "padre" en el proceso de generaciÃ³n.
         doors.Add(neighborDoor);
     }
 
     public void GenerateDoors(/*int maxDoors*/int maxIterations, int currentIteration)
     {
-        // añadimos un número entre 0 y 3 de puertas
+        // aÃ±adimos un nÃºmero entre 0 y 3 de puertas
         int numberOfDoors = Random.Range(0, 4);
         for (int i = 0; i < numberOfDoors; i++) 
         {
