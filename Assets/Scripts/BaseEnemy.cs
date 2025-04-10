@@ -2,16 +2,54 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
+public class EnemyStats
+{
+    public EnemyStats()
+    {
+        // constructor vacío.
+    }
+    
+    public EnemyStats(EnemyStats value)
+    {
+        this.maxHP = value.maxHP;
+        this.attackDamage = value.attackDamage;
+        this.attackRange = value.attackRange;
+        this.attackRate = value.attackRate;
+        this.movementSpeed = value.movementSpeed;
+    }
+    
+    [SerializeField]
+    public float maxHP;
+    
+    [SerializeField] public float movementSpeed;
+    
+    [SerializeField]
+    public float attackDamage = 1.0f;
+    
+    [SerializeField]
+    public float attackRate = 1.0f;
+    
+    [SerializeField]
+    public float attackRange = 1.0f;
+    
+    public float difficultyValue = 0.0f;
+    
+    public EnemyGenerationSystem.EnemyDifficulty difficultyCategory = EnemyGenerationSystem.EnemyDifficulty.Easy;
+
+    public string PrintStats()
+    {
+        return $"DifficultyValue = {difficultyValue}; Category: {difficultyCategory}; HP: {maxHP}; " +
+               $"Damage: {attackDamage}; Attack Rate: {attackRate}; Range: {attackRange}; " +
+               $"Movement Speed: {movementSpeed}";
+    }
+    
+}
+
 public class BaseEnemy : MonoBehaviour
 {
     protected float currentHP;
 
-    [SerializeField]
-    protected float maxHP;
-
-
-    [SerializeField] protected float movementSpeed;
-
+   
     // Radio de detecci�n 
     [SerializeField]
     protected Senses detectionSenses;
@@ -21,22 +59,15 @@ public class BaseEnemy : MonoBehaviour
     protected NavMeshAgent navMeshAgent;
 
     // MeshRenderer meshRenderer;
-
-    [SerializeField]
-    protected float attackDamage = 1.0f;
-    
-    [SerializeField]
-    protected float attackRate = 1.0f;
-    
-    [SerializeField]
-    protected float attackRange = 1.0f;
+    public EnemyStats stats = new EnemyStats();
+   
     
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        currentHP = maxHP;
+        currentHP = stats.maxHP;
     }
 
     private void FixedUpdate()
